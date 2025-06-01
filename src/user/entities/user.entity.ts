@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { ContactUs } from 'src/contact-us/entities/contact-us.entity';
-import { IsNotEmpty } from 'class-validator';
 
 @Entity()
 export class User {
@@ -8,9 +7,8 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-  @IsNotEmpty()
   nickname: string;
 
-  @OneToMany(() => ContactUs, (contact) => contact.user)
-  contacts: ContactUs[];
+  @OneToMany(() => ContactUs, (contactUs) => contactUs.user)
+  contactUs: ContactUs[];
 }

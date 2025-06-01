@@ -1,24 +1,36 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { User } from './user/entities/user.entity';
-import { ContactUs } from './contact-us/entities/contact-us.entity';
 import { Product } from './product/entities/product.entity';
+import { ContactUs } from './contact-us/entities/contact-us.entity';
+
+import { UserModule } from './user/user.module';
+import { ProductModule } from './product/product.module';
+import { ContactUsModule } from './contact-us/contact-us.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [User, ContactUs, Product],
-      synchronize: true,
+
+    TypeOrmModule.forRootAsync({
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.get('DB_HOST'),
+        port: Number(config.get('DB_PORT') || 5432),
+        username: config.get('DB_USERNAME'),
+        password: config.get('DB_PASSWORD'),
+        database: config.get('DB_NAME'),
+        entities: [User, Product, ContactUs],
+        synchronize: true,
+      }),
+      inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, ContactUs, Product]),
+
+    UserModule,
+    ProductModule,
+    ContactUsModule,
   ],
 })
 export class AppModule {}

@@ -1,26 +1,43 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ContactUs } from './entities/contact-us.entity';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
 
 @Injectable()
 export class ContactUsService {
-  create(createContactUsDto: CreateContactUsDto) {
-    return 'This action adds a new contactUs';
+  constructor(
+    @InjectRepository(ContactUs)
+    private contactRepo: Repository<ContactUs>,
+  ) {}
+
+  create(dto: CreateContactUsDto) {
+    const contact = this.contactRepo.create(dto);
+    return this.contactRepo.save(contact);
   }
 
   findAll() {
-    return `This action returns all contactUs`;
+    return this.contactRepo.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} contactUs`;
+  async findOne(id: number) {
+    const contact = await this.contactRepo.findOne({ where: { id } });
+    if (!contact) {
+      throw new NotFoundException(`해당 문의를 찾을 수 없습니다.`);
+    }
+    return contact;
   }
 
-  update(id: number, updateContactUsDto: UpdateContactUsDto) {
-    return `This action updates a #${id} contactUs`;
+  async update(id: number, dto: UpdateContactUsDto) {
+    const contact = await this.contactRepo.findOne({ where: { id } });
+    if (!contact) throw new NotFoundException('문의를 찾을 수 없습니다.');
+    Object.assign(contact, dto);
+    return this.contactRepo.save(contact);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} contactUs`;
+  async remove(id: number) {
+    await this.contactRepo.delete(id);
+    return { message: '삭제가 완료되었습니다.' };
   }
 }

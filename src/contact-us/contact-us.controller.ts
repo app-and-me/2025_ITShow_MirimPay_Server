@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Body,
+  Param,
+} from '@nestjs/common';
 import { ContactUsService } from './contact-us.service';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
@@ -8,8 +16,8 @@ export class ContactUsController {
   constructor(private readonly contactUsService: ContactUsService) {}
 
   @Post()
-  create(@Body() createContactUsDto: CreateContactUsDto) {
-    return this.contactUsService.create(createContactUsDto);
+  create(@Body() dto: CreateContactUsDto) {
+    return this.contactUsService.create(dto);
   }
 
   @Get()
@@ -23,8 +31,8 @@ export class ContactUsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateContactUsDto: UpdateContactUsDto) {
-    return this.contactUsService.update(+id, updateContactUsDto);
+  update(@Param('id') id: string, @Body() dto: UpdateContactUsDto) {
+    return this.contactUsService.update(+id, dto);
   }
 
   @Delete(':id')
