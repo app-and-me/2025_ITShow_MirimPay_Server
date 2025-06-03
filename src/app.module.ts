@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { User } from './user/entities/user.entity';
+import { Card } from './user/entities/card.entity';
+import { Payment } from './user/entities/payment.entity';
 import { Product } from './product/entities/product.entity';
 import { ContactUs } from './contact-us/entities/contact-us.entity';
 
@@ -22,7 +24,7 @@ import { ContactUsModule } from './contact-us/contact-us.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User, Product, ContactUs],
+        entities: [User, Card, Payment, Product, ContactUs],
         synchronize: true,
       }),
       inject: [ConfigService],
