@@ -22,7 +22,7 @@ export class ProductService {
     return this.productRepo.find();
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const product = await this.productRepo.findOne({ where: { id } });
     if (!product) {
       throw new NotFoundException('해당 제품을 찾을 수 없습니다.');
@@ -30,7 +30,7 @@ export class ProductService {
     return product;
   }
 
-  async update(id: number, dto: UpdateProductDto) {
+  async update(id: string, dto: UpdateProductDto) {
     const product = await this.productRepo.findOne({ where: { id } });
     if (!product) {
       throw new Error('제품을 찾을 수 없습니다.');
@@ -39,8 +39,9 @@ export class ProductService {
     return this.productRepo.save(product);
   }
 
-  async remove(id: number) {
-    await this.productRepo.delete(id);
+  async remove(id: string) {
+    const product = await this.findOne(id); // 존재 확인
+    await this.productRepo.remove(product);
     return { message: '삭제가 완료되었습니다.' };
   }
 }
