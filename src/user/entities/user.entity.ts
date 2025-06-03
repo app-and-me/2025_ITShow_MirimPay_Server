@@ -9,6 +9,12 @@ export class User {
   @Column({ unique: true })
   nickname: string;
 
+  @Column({ nullable: true })
+  faceImagePath: string;
+
+  @Column({ type: 'text', nullable: true })
+  faceEncoding: string;
+
   @OneToMany(() => ContactUs, (contactUs) => contactUs.user)
   contactUs: ContactUs[];
 }

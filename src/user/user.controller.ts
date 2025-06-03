@@ -6,11 +6,16 @@ import {
   Body,
   Delete,
   Patch,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiConsumes, ApiParam } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+@ApiTags('users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -38,5 +43,25 @@ export class UserController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
+  }
+
+  @Post(':id/register-face')
+  @ApiOperation({ summary: '사용자 얼굴 등록' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('face'))
+  async registerFace(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.userService.registerFace(+id, file);
+  }
+
+  @Post('recognize-face')
+  @ApiOperation({ summary: '얼굴 인식으로 사용자 찾기' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('face'))
+  async recognizeFace(@UploadedFile() file: Express.Multer.File) {
+    return this.userService.recognizeFace(file);
   }
 }
