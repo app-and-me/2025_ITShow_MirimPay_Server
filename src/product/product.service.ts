@@ -40,7 +40,7 @@ export class ProductService {
   }
 
   async remove(id: string) {
-    const product = await this.findOne(id); // 존재 확인
+    const product = await this.findOne(id);
     await this.productRepo.remove(product);
     return { message: '삭제가 완료되었습니다.' };
   }
