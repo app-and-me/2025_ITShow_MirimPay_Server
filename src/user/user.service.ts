@@ -313,6 +313,34 @@ export class UserService {
     }));
   }
 
+  async setMainCard(userId: number, cardId: number) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['cards'],
+    });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    const card = await this.cardRepo.findOne({
+      where: { id: cardId, userId },
+    });
+    if (!card) {
+      throw new NotFoundException('카드를 찾을 수 없습니다.');
+    }
+    await this.cardRepo.update(
+      { userId, isMainCard: true },
+      { isMainCard: false },
+    );
+
+    card.isMainCard = true;
+    await this.cardRepo.save(card);
+    return {
+      success: true,
+      message: '메인 카드가 성공적으로 변경되었습니다.',
+      card: card,
+    };
+  }
+
   async createQrPayment(dto: CreateQrPaymentDto) {
     const user = await this.userRepo.findOne({
       where: { id: dto.userId },

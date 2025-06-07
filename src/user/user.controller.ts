@@ -21,7 +21,7 @@ import {
   FacePaymentDto,
 } from './dto/payment.dto';
 
-@ApiTags('users')
+@ApiTags('Users')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -63,7 +63,7 @@ export class UserController {
     return this.userService.registerFace(+id, file);
   }
 
-  @Post('recognize-face')
+  @Post('face/recognize')
   @ApiOperation({ summary: '얼굴 인식으로 사용자 찾기' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('face'))
@@ -84,19 +84,27 @@ export class UserController {
     return this.userService.getUserCards(+id);
   }
 
-  @Post('create-qr-payment')
+  @Post(':id/cards/:cardId/main')
+  @ApiOperation({ summary: '메인 카드 변경' })
+  @ApiParam({ name: 'id', description: '사용자 ID' })
+  @ApiParam({ name: 'cardId', description: '카드 ID' })
+  async setMainCard(@Param('id') id: string, @Param('cardId') cardId: string) {
+    return this.userService.setMainCard(+id, +cardId);
+  }
+
+  @Post('qr/payment')
   @ApiOperation({ summary: 'QR 결제 생성' })
   async createQrPayment(@Body() dto: CreateQrPaymentDto) {
     return this.userService.createQrPayment(dto);
   }
 
-  @Post('process-payment')
+  @Post('process/payment')
   @ApiOperation({ summary: '결제 처리' })
   async processPayment(@Body() dto: ProcessPaymentDto) {
     return this.userService.processPayment(dto);
   }
 
-  @Post('face-payment')
+  @Post('face/payment')
   @ApiOperation({ summary: '얼굴 인식 결제' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('face'))
@@ -107,7 +115,7 @@ export class UserController {
     return this.userService.faceRecognitionPayment(file, dto);
   }
 
-  @Get(':id/payment-history')
+  @Get(':id/payment/history')
   @ApiOperation({ summary: '결제 내역 조회' })
   @ApiParam({ name: 'id', description: '사용자 ID' })
   async getPaymentHistory(@Param('id') id: string) {
