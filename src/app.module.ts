@@ -1,16 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
-import { User } from './user/entities/user.entity';
-import { Card } from './user/entities/card.entity';
-import { Payment } from './user/entities/payment.entity';
-import { Product } from './product/entities/product.entity';
-import { ContactUs } from './contact-us/entities/contact-us.entity';
-
 import { UserModule } from './user/user.module';
 import { ProductModule } from './product/product.module';
 import { ContactUsModule } from './contact-us/contact-us.module';
+import { AlertModule } from './alert/alert.module';
 
 @Module({
   imports: [
@@ -24,7 +18,7 @@ import { ContactUsModule } from './contact-us/contact-us.module';
         username: config.get('DB_USERNAME'),
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
-        entities: [User, Card, Payment, Product, ContactUs],
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -33,6 +27,7 @@ import { ContactUsModule } from './contact-us/contact-us.module';
     UserModule,
     ProductModule,
     ContactUsModule,
+    AlertModule,
   ],
 })
 export class AppModule {}
