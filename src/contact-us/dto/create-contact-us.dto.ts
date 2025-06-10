@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { contactUsCategory } from '../entities/contact-us.entity';
 
 export enum ContactStatus {
   PENDING = 'PENDING',
@@ -25,4 +26,8 @@ export class CreateContactUsDto {
 
   @IsNotEmpty()
   userId: number;
+
+  @IsEnum(contactUsCategory)
+  @IsNotEmpty()
+  category: contactUsCategory;
 }
