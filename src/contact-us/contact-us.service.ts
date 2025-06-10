@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ContactUs } from './entities/contact-us.entity';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class ContactUsService {
@@ -12,8 +13,11 @@ export class ContactUsService {
     private contactRepo: Repository<ContactUs>,
   ) {}
 
-  create(dto: CreateContactUsDto) {
-    const contact = this.contactRepo.create(dto);
+  create(dto: CreateContactUsDto, user: User) {
+    const contact = this.contactRepo.create({
+      ...dto,
+      user: user,
+    });
     return this.contactRepo.save(contact);
   }
 
