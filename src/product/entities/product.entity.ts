@@ -8,7 +8,7 @@ export enum productCategory {
   MILK = '우유',
   ICED_FOOD = '냉동식품',
   ICECREAM = '아이스크림',
-  ETC = '그 외'
+  ETC = '그 외',
 }
 
 @Entity()

@@ -5,12 +5,12 @@ export enum contactUsCategory {
   STORE = '입고',
   SOLD_OUT = '품절',
   OPERATION = '운영',
-  OTHER = '그 외'
+  OTHER = '그 외',
 }
 
 export enum contactStatus {
   PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED'
+  COMPLETED = 'COMPLETED',
 }
 
 @Entity()

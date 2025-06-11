@@ -44,6 +44,9 @@ export class ContactUsService {
   async update(id: number, dto: UpdateContactUsDto) {
     const contact = await this.contactRepo.findOne({ where: { id } });
     if (!contact) throw new NotFoundException('문의를 찾을 수 없습니다.');
+    if (dto.response?.trim() !== '') {
+      contact.status = contactStatus.COMPLETED;
+    }
     Object.assign(contact, dto);
     return this.contactRepo.save(contact);
   }
