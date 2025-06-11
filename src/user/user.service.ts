@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -9,7 +13,6 @@ import {
   PaymentMethod,
 } from './entities/payment.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { RegisterCardDto } from './dto/register-card.dto';
 import {
   CreateQrPaymentDto,
@@ -22,7 +25,6 @@ import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import axios from 'axios';
-import * as QRCode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import {
   TossCardResponse,
@@ -76,20 +78,6 @@ export class UserService {
     return user;
   }
 
-  async update(id: number, dto: UpdateUserDto) {
-    const user = await this.userRepo.findOne({ where: { id } });
-    if (!user) {
-      throw new Error('사용자를 찾을 수 없습니다.');
-    }
-    Object.assign(user, dto);
-    return this.userRepo.save(user);
-  }
-
-  async remove(id: number) {
-    await this.userRepo.delete(id);
-    return { message: '삭제가 완료되었습니다.' };
-  }
-
   async registerFace(userId: number, imageFile: UploadedFile) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
@@ -97,7 +85,7 @@ export class UserService {
     }
 
     if (!imageFile) {
-      throw new Error('이미지 파일이 제공되지 않았습니다.');
+      throw new BadRequestException('이미지 파일이 제공되지 않았습니다.');
     }
 
     const uploadsDir = path.join(process.cwd(), 'uploads', 'faces');
@@ -111,7 +99,7 @@ export class UserService {
     } else if (imageFile.buffer) {
       await fs.writeFile(imagePath, imageFile.buffer);
     } else {
-      throw new Error(
+      throw new BadRequestException(
         '이미지 파일이 유효하지 않습니다. buffer 또는 path가 필요합니다.',
       );
     }
@@ -119,7 +107,6 @@ export class UserService {
     try {
       const pythonScript = path.join(process.cwd(), 'public', 'face_api.py');
       const command = `python3 "${pythonScript}" register "${imagePath}" ${userId}`;
-      console.log(command);
       const { stdout } = await execAsync(command);
       const result = JSON.parse(stdout) as {
         success: boolean;
@@ -143,7 +130,7 @@ export class UserService {
       }
     } catch (error: unknown) {
       await fs.remove(imagePath);
-      throw new Error(
+      throw new BadRequestException(
         `얼굴 등록 실패: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -151,7 +138,7 @@ export class UserService {
 
   async recognizeFace(imageFile: UploadedFile) {
     if (!imageFile) {
-      throw new Error('이미지 파일이 제공되지 않았습니다.');
+      throw new BadRequestException('이미지 파일이 제공되지 않았습니다.');
     }
 
     const tempDir = path.join(process.cwd(), 'uploads', 'temp');
@@ -165,7 +152,7 @@ export class UserService {
     } else if (imageFile.buffer) {
       await fs.writeFile(imagePath, imageFile.buffer);
     } else {
-      throw new Error(
+      throw new BadRequestException(
         '이미지 파일이 유효하지 않습니다. buffer 또는 path가 필요합니다.',
       );
     }
@@ -176,7 +163,7 @@ export class UserService {
       });
 
       if (users.length === 0) {
-        throw new Error('등록된 얼굴이 없습니다.');
+        throw new NotFoundException('등록된 얼굴이 없습니다.');
       }
 
       const faceData = users.map((user) => ({
@@ -213,15 +200,38 @@ export class UserService {
       }
     } catch (error: unknown) {
       await fs.remove(imagePath);
-      throw new Error(
-        `얼굴 인식 실패: ${error instanceof Error ? error.message : String(error)}`,
-      );
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes('No face found') ||
+          error.message.includes('얼굴을 찾을 수 없습니다')
+        ) {
+          throw new NotFoundException(`얼굴 인식 실패: ${error.message}`);
+        } else if (
+          error.message.includes('Multiple faces') ||
+          error.message.includes('여러 얼굴')
+        ) {
+          throw new BadRequestException(`얼굴 인식 실패: ${error.message}`);
+        } else {
+          throw new InternalServerErrorException(
+            `얼굴 인식 실패: ${error.message}`,
+          );
+        }
+      } else {
+        throw new InternalServerErrorException(
+          `얼굴 인식 실패: ${String(error)}`,
+        );
+      }
     }
   }
 
-  async registerCard(dto: RegisterCardDto) {
+  async registerCard(dto: RegisterCardDto, userId?: number) {
+    if (!userId) {
+      throw new BadRequestException('사용자 ID가 필요합니다.');
+    }
+
     const user = await this.userRepo.findOne({
-      where: { id: dto.userId },
+      where: { id: userId },
       relations: ['cards'],
     });
 
@@ -238,6 +248,7 @@ export class UserService {
           cardExpirationMonth: dto.expiryMonth,
           cardPassword: dto.cardPassword.substring(0, 2),
           customerIdentityNumber: dto.identityNumber,
+          cvc: dto.cvc,
           customerKey: `CUSTOMER_${uuidv4().substring(0, 8)}`,
         },
         {
@@ -252,14 +263,14 @@ export class UserService {
 
       if (dto.isMainCard || user.cards.length === 0) {
         await this.cardRepo.update(
-          { userId: dto.userId, isMainCard: true },
+          { userId: userId, isMainCard: true },
           { isMainCard: false },
         );
       }
 
       const cardData = response.data;
       const card = this.cardRepo.create({
-        userId: dto.userId,
+        userId: userId,
         billingKey: EncryptionUtil.encryptBillingKey(cardData.billingKey),
         customerKey: cardData.customerKey,
         cardCompany: cardData.cardCompany,
@@ -282,6 +293,13 @@ export class UserService {
         },
       };
     } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+
       if (axios.isAxiosError(error)) {
         const errorData = error.response?.data as TossErrorResponse;
         const errorMessage =
@@ -289,7 +307,9 @@ export class UserService {
         console.error('카드 등록 오류:', error.response?.data || error.message);
         throw new Error(errorMessage);
       }
-      throw new Error('카드 등록 중 오류가 발생했습니다.');
+      throw new InternalServerErrorException(
+        '카드 등록 중 오류가 발생했습니다.',
+      );
     }
   }
 
@@ -305,6 +325,8 @@ export class UserService {
 
     return user.cards.map((card) => ({
       id: card.id,
+      billingKey: card.billingKey,
+      customerKey: card.customerKey,
       cardCompany: card.cardCompany,
       cardNumber: card.cardNumber,
       cardNickname: card.cardNickname,
@@ -341,34 +363,50 @@ export class UserService {
     };
   }
 
-  async createQrPayment(dto: CreateQrPaymentDto) {
+  async deleteCard(userId: number, cardId: number) {
     const user = await this.userRepo.findOne({
-      where: { id: dto.userId },
+      where: { id: userId },
       relations: ['cards'],
     });
-
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
     const card = await this.cardRepo.findOne({
-      where: { id: dto.cardId, userId: dto.userId },
+      where: { id: cardId, userId },
     });
-
     if (!card) {
       throw new NotFoundException('카드를 찾을 수 없습니다.');
     }
 
+    const wasMainCard = card.isMainCard;
+    await this.cardRepo.remove(card);
+
+    if (wasMainCard) {
+      const remainingCards = await this.cardRepo.find({
+        where: { userId },
+        order: { createdAt: 'ASC' },
+      });
+
+      if (remainingCards.length > 0) {
+        remainingCards[0].isMainCard = true;
+        await this.cardRepo.save(remainingCards[0]);
+      }
+    }
+
+    return {
+      success: true,
+      message: '카드가 성공적으로 삭제되었습니다.',
+    };
+  }
+
+  async createQrPayment(dto: CreateQrPaymentDto) {
     const orderId = `ORDER_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
     const paymentData = {
       orderId,
       amount: dto.amount,
       orderName: dto.orderName,
-      userId: dto.userId,
-      cardId: dto.cardId,
-      billingKey: card.billingKey,
-      customerKey: card.customerKey,
       timestamp: Date.now(),
     };
 
@@ -377,26 +415,30 @@ export class UserService {
       amount: dto.amount,
       orderName: dto.orderName,
       paymentMethod: PaymentMethod.QR,
-      userId: dto.userId,
-      cardId: dto.cardId,
       status: PaymentStatus.PENDING,
     });
 
     await this.paymentRepo.save(payment);
 
-    const qrData = JSON.stringify(paymentData);
-    const qrImage = await QRCode.toDataURL(qrData);
-
     return {
       success: true,
-      qrImage,
-      orderId,
       paymentData,
     };
   }
 
   async processPayment(dto: ProcessPaymentDto) {
     try {
+      const card = await this.cardRepo.findOne({
+        where: { customerKey: dto.customerKey },
+        relations: ['user'],
+      });
+
+      if (!card) {
+        throw new NotFoundException(
+          '해당 customerKey로 등록된 카드를 찾을 수 없습니다.',
+        );
+      }
+
       const decryptedBillingKey = EncryptionUtil.decryptBillingKey(
         dto.billingKey,
       );
@@ -426,6 +468,8 @@ export class UserService {
           status: PaymentStatus.SUCCESS,
           tossPaymentKey: paymentData.paymentKey,
           tossResponse: JSON.stringify(paymentData),
+          userId: card.user.id,
+          cardId: card.id,
         },
       );
 
@@ -440,14 +484,20 @@ export class UserService {
         { status: PaymentStatus.FAILED },
       );
 
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
       if (axios.isAxiosError(error)) {
         const errorData = error.response?.data as TossErrorResponse;
         const errorMessage =
           errorData?.message || '결제 처리 중 오류가 발생했습니다.';
         console.error('결제 처리 오류:', error.response?.data || error.message);
-        throw new Error(errorMessage);
+        throw new BadRequestException(`결제 실패: ${errorMessage}`);
       }
-      throw new Error('결제 처리 중 오류가 발생했습니다.' + error);
+      throw new InternalServerErrorException(
+        '결제 처리 중 시스템 오류가 발생했습니다.',
+      );
     }
   }
 
@@ -458,7 +508,7 @@ export class UserService {
     const recognitionResult = await this.recognizeFace(imageFile);
 
     if (!recognitionResult.success || !recognitionResult.user) {
-      throw new Error(
+      throw new NotFoundException(
         '얼굴 인식에 실패했습니다. 등록된 사용자를 찾을 수 없습니다.',
       );
     }
@@ -470,7 +520,9 @@ export class UserService {
     });
 
     if (!mainCard) {
-      throw new Error('등록된 메인 카드가 없습니다. 먼저 카드를 등록해주세요.');
+      throw new NotFoundException(
+        '등록된 메인 카드가 없습니다. 먼저 카드를 등록해주세요.',
+      );
     }
 
     const orderId = `FACE_ORDER_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -546,6 +598,122 @@ export class UserService {
         { status: PaymentStatus.FAILED },
       );
 
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      if (axios.isAxiosError(error)) {
+        const errorData = error.response?.data as TossErrorResponse;
+        const errorMessage =
+          errorData?.message || '결제 처리 중 오류가 발생했습니다.';
+        console.error(
+          '얼굴 인식 결제 오류:',
+          error.response?.data || error.message,
+        );
+        throw new Error(`결제 실패: ${errorMessage}`);
+      }
+      throw new Error('결제 처리 중 시스템 오류가 발생했습니다.');
+    }
+  }
+
+  async faceRecognitionPaymentBase64(base64Image: string, dto: FacePaymentDto) {
+    const recognitionResult = await this.recognizeFaceBase64(base64Image);
+
+    if (!recognitionResult.success || !recognitionResult.user) {
+      throw new NotFoundException(
+        '얼굴 인식에 실패했습니다. 등록된 사용자를 찾을 수 없습니다.',
+      );
+    }
+
+    const user = recognitionResult.user;
+
+    const mainCard = await this.cardRepo.findOne({
+      where: { userId: user.id, isMainCard: true },
+    });
+
+    if (!mainCard) {
+      throw new NotFoundException(
+        '등록된 메인 카드가 없습니다. 먼저 카드를 등록해주세요.',
+      );
+    }
+
+    const orderId = `FACE_ORDER_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    const payment = this.paymentRepo.create({
+      orderId,
+      amount: dto.amount,
+      orderName: dto.orderName,
+      paymentMethod: PaymentMethod.FACE,
+      userId: user.id,
+      cardId: mainCard.id,
+      status: PaymentStatus.PENDING,
+    });
+
+    await this.paymentRepo.save(payment);
+
+    try {
+      const decryptedBillingKey = EncryptionUtil.decryptBillingKey(
+        mainCard.billingKey,
+      );
+
+      const response = await axios.post<TossPaymentResponse>(
+        `${this.TOSS_API_URL}/billing/${decryptedBillingKey}`,
+        {
+          customerKey: mainCard.customerKey,
+          amount: dto.amount,
+          orderId,
+          orderName: dto.orderName,
+        },
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `${this.TOSS_SECRET_KEY}:`,
+            ).toString('base64')}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const paymentData = response.data;
+
+      await this.paymentRepo.update(
+        { orderId },
+        {
+          status: PaymentStatus.SUCCESS,
+          tossPaymentKey: paymentData.paymentKey,
+          tossResponse: JSON.stringify(paymentData),
+        },
+      );
+
+      return {
+        success: true,
+        message: '얼굴 인식 결제가 완료되었습니다.',
+        orderId,
+        user: {
+          id: user.id,
+          nickname: user.nickname,
+        },
+        card: {
+          cardCompany: mainCard.cardCompany,
+          cardNumber: mainCard.cardNumber,
+        },
+        payment: {
+          amount: dto.amount,
+          orderName: dto.orderName,
+          paymentKey: paymentData.paymentKey,
+        },
+        confidence: recognitionResult.confidence,
+      };
+    } catch (error) {
+      await this.paymentRepo.update(
+        { orderId },
+        { status: PaymentStatus.FAILED },
+      );
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
       if (axios.isAxiosError(error)) {
         const errorData = error.response?.data as TossErrorResponse;
         const errorMessage =
@@ -562,7 +730,7 @@ export class UserService {
 
   async getPaymentHistory(userId: number) {
     const payments = await this.paymentRepo.find({
-      where: { userId },
+      where: { userId, status: PaymentStatus.SUCCESS },
       relations: ['card'],
       order: { createdAt: 'DESC' },
     });
@@ -580,5 +748,139 @@ export class UserService {
       },
       createdAt: payment.createdAt,
     }));
+  }
+
+  async registerFaceBase64(userId: number, base64Image: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (!base64Image) {
+      throw new BadRequestException('이미지 데이터가 제공되지 않았습니다.');
+    }
+
+    const base64Data = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'faces');
+    await fs.ensureDir(uploadsDir);
+
+    const filename = `user_${userId}_${Date.now()}.jpg`;
+    const imagePath = path.join(uploadsDir, filename);
+
+    try {
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      await fs.writeFile(imagePath, imageBuffer);
+
+      const pythonScript = path.join(process.cwd(), 'public', 'face_api.py');
+      const command = `python3 "${pythonScript}" register "${imagePath}" ${userId}`;
+      const { stdout } = await execAsync(command);
+      const result = JSON.parse(stdout) as {
+        success: boolean;
+        message: string;
+        encoding?: string;
+      };
+
+      console.log(result);
+
+      if (result.success && result.encoding) {
+        user.faceImagePath = imagePath;
+        user.faceEncoding = result.encoding;
+        await this.userRepo.save(user);
+
+        return {
+          success: true,
+          message: '얼굴 등록이 완료되었습니다.',
+          userId: userId,
+        };
+      } else {
+        await fs.remove(imagePath);
+        throw new Error(result.message);
+      }
+    } catch (error: unknown) {
+      await fs.remove(imagePath);
+      throw new BadRequestException(
+        `얼굴 등록 실패: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async recognizeFaceBase64(base64Image: string) {
+    if (!base64Image) {
+      throw new BadRequestException('이미지 데이터가 제공되지 않았습니다.');
+    }
+
+    const base64Data = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+
+    const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+    await fs.ensureDir(tempDir);
+
+    const filename = `temp_${Date.now()}.jpg`;
+    const imagePath = path.join(tempDir, filename);
+
+    try {
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      await fs.writeFile(imagePath, imageBuffer);
+
+      const users = await this.userRepo.find({
+        where: { faceEncoding: Not(IsNull()) },
+      });
+
+      if (users.length === 0) {
+        throw new NotFoundException('등록된 얼굴이 없습니다.');
+      }
+
+      const faceData = users.map((user) => ({
+        userId: user.id,
+        encoding: user.faceEncoding,
+      }));
+
+      const pythonScript = path.join(process.cwd(), 'public', 'face_api.py');
+      const command = `python3 "${pythonScript}" recognize "${imagePath}" '${JSON.stringify(faceData)}'`;
+
+      const { stdout } = await execAsync(command);
+      const result = JSON.parse(stdout) as {
+        success: boolean;
+        message: string;
+        userId?: number;
+        confidence?: number;
+      };
+
+      await fs.remove(imagePath);
+
+      if (result.success && result.userId) {
+        const recognizedUser = await this.userRepo.findOne({
+          where: { id: result.userId },
+        });
+
+        return {
+          success: true,
+          message: '얼굴 인식 성공',
+          user: recognizedUser,
+          confidence: result.confidence,
+        };
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error: unknown) {
+      await fs.remove(imagePath);
+
+      if (error instanceof Error) {
+        if (
+          error.message.includes('No face found') ||
+          error.message.includes('얼굴을 찾을 수 없습니다')
+        ) {
+          throw new NotFoundException(`얼굴 인식 실패: ${error.message}`);
+        } else if (
+          error.message.includes('Multiple faces') ||
+          error.message.includes('여러 얼굴')
+        ) {
+          throw new BadRequestException(`얼굴 인식 실패: ${error.message}`);
+        } else {
+          throw new Error(`얼굴 인식 실패: ${error.message}`);
+        }
+      } else {
+        throw new Error(`얼굴 인식 실패: ${String(error)}`);
+      }
+    }
   }
 }

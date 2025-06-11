@@ -49,13 +49,13 @@ export class Payment {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
-  @Column()
+  @Column({ nullable: true })
   userId: number;
 
   @ManyToOne(() => Card, { onDelete: 'CASCADE' })
   card: Card;
 
-  @Column()
+  @Column({ nullable: true })
   cardId: number;
 
   @CreateDateColumn()

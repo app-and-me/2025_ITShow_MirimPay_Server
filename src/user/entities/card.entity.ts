@@ -22,7 +22,7 @@ export class Card {
   @Column({ type: 'varchar', length: 100 })
   cardCompany: string;
 
-  @Column({ type: 'varchar', length: 50 })
+  @Column({ type: 'varchar', length: 50, unique: true })
   cardNumber: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })

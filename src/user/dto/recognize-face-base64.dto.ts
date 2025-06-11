@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
 
-export class RegisterFaceBase64Dto {
+export class RecognizeFaceBase64Dto {
   @IsString()
   faceImage: string;
 }

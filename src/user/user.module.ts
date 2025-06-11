@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
+import { PassportModule } from '@nestjs/passport';
 import { User } from './entities/user.entity';
 import { Card } from './entities/card.entity';
 import { Payment } from './entities/payment.entity';
@@ -13,6 +14,7 @@ import { UserController } from './user.controller';
     MulterModule.register({
       dest: './uploads',
     }),
+    PassportModule,
   ],
   providers: [UserService],
   controllers: [UserController],
