@@ -10,4 +10,4 @@ COPY . .
 EXPOSE 8080
 RUN chown -R node /usr/src/app
 USER node
-CMD /bin/sh -c "npx typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts && yarn start"
+CMD /bin/sh -c "yarn start"
