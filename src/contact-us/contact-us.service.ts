@@ -12,13 +12,13 @@ export class ContactUsService {
     private contactRepo: Repository<ContactUs>,
   ) {}
 
-  async getPendingStatus(): Promise<ContactUs[]> {
+  async getPendingStatus() {
     return this.contactRepo.find({
       where: { status: contactStatus.PENDING },
     });
   }
 
-  async getCompletedStatus(): Promise<ContactUs[]> {
+  async getCompletedStatus() {
     return this.contactRepo.find({
       where: { status: contactStatus.COMPLETED },
     });
@@ -29,26 +29,28 @@ export class ContactUsService {
     return this.contactRepo.save(contact);
   }
 
-  findAll() {
-    return this.contactRepo.find();
-  }
-
-  async findOne(id: number) {
-    const contact = await this.contactRepo.findOne({ where: { id } });
-    if (!contact) {
-      throw new NotFoundException(`해당 문의를 찾을 수 없습니다.`);
+  findAll(status?: string) {
+    if (status === 'pending') {
+      return this.getPendingStatus();
+    } else if (status === 'completed') {
+      return this.getCompletedStatus();
     }
-    return contact;
+
+    return this.contactRepo.find();
   }
 
   async update(id: number, dto: UpdateContactUsDto) {
     const contact = await this.contactRepo.findOne({ where: { id } });
-    if (!contact) throw new NotFoundException('문의를 찾을 수 없습니다.');
-    if (dto.response?.trim() !== '') {
-      contact.status = contactStatus.COMPLETED;
+    if (!contact) {
+      throw new NotFoundException(`해당 문의를 찾을 수 없습니다.`);
     }
-    Object.assign(contact, dto);
-    return this.contactRepo.save(contact);
+    if (contact.status === contactStatus.COMPLETED) {
+      throw new NotFoundException(`이미 완료된 문의입니다.`);
+    }
+
+    contact.response = dto.response;
+    contact.status = contactStatus.COMPLETED;
+    return await this.contactRepo.save(contact);
   }
 
   async remove(id: number) {

@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 
 export enum contactUsCategory {
   STOCK = '재고',
@@ -32,4 +37,7 @@ export class ContactUs {
 
   @Column({ type: 'enum', enum: contactUsCategory })
   category: contactUsCategory;
+
+  @CreateDateColumn()
+  createdAt: Date;
 }

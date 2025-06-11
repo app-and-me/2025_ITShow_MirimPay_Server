@@ -23,6 +23,9 @@ export class ProcessPaymentDto {
 
   @IsString()
   orderName: string;
+
+  @IsString()
+  pin: string;
 }
 
 export class FacePaymentDto {
@@ -31,6 +34,9 @@ export class FacePaymentDto {
 
   @IsString()
   orderName: string;
+
+  @IsString()
+  pin: string;
 }
 
 export class FacePaymentBase64Dto {
@@ -42,4 +48,7 @@ export class FacePaymentBase64Dto {
 
   @IsString()
   orderName: string;
+
+  @IsString()
+  pin: string;
 }

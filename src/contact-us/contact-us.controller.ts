@@ -2,16 +2,15 @@ import {
   Controller,
   Post,
   Get,
-  Patch,
   Delete,
   Body,
   Param,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ContactUsService } from './contact-us.service';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
-import { ContactUs } from './entities/contact-us.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -24,28 +23,16 @@ export class ContactUsController {
     return this.contactUsService.create(dto);
   }
 
-  @Get('PENDING')
-  getPendingContacts(): Promise<ContactUs[]> {
-    return this.contactUsService.getPendingStatus();
-  }
-
-  @Get('COMPLETED')
-  getCompletedContacts(): Promise<ContactUs[]> {
-    return this.contactUsService.getCompletedStatus();
-  }
-
   @Get()
-  findAll() {
-    return this.contactUsService.findAll();
+  findAll(@Query('status') status?: string) {
+    return this.contactUsService.findAll(status);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contactUsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateContactUsDto) {
+  @Post(':id/response')
+  async respondToContact(
+    @Param('id') id: string,
+    @Body() dto: UpdateContactUsDto,
+  ) {
     return this.contactUsService.update(+id, dto);
   }
 

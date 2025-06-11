@@ -102,8 +102,7 @@ export class UserController {
     return this.userService.registerFaceBase64(userId, dto.faceImage);
   }
 
-  @Post('face/recognize')
-  @UseGuards(JwtAuthGuard)
+  @Get('face/recognize')
   @ApiOperation({ summary: '얼굴 인식으로 사용자 찾기' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('face'))
@@ -111,8 +110,7 @@ export class UserController {
     return this.userService.recognizeFace(file);
   }
 
-  @Post('face/recognize/base64')
-  @UseGuards(JwtAuthGuard)
+  @Get('face/recognize/base64')
   @ApiOperation({ summary: '얼굴 인식으로 사용자 찾기 (Base64)' })
   async recognizeFaceBase64(@Body() dto: RecognizeFaceBase64Dto) {
     return this.userService.recognizeFaceBase64(dto.faceImage);
@@ -185,9 +183,17 @@ export class UserController {
   }
 
   @Post('payment/process')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '결제 처리' })
-  async processPayment(@Body() dto: ProcessPaymentDto) {
-    return this.userService.processPayment(dto);
+  async processPayment(
+    @Req() req: RequestWithUser,
+    @Body() dto: ProcessPaymentDto,
+  ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
+    }
+    return this.userService.processPayment(dto, userId);
   }
 
   @Post('payment/face')
