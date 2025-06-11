@@ -13,10 +13,9 @@ export class ContactUsService {
     private contactRepo: Repository<ContactUs>,
   ) {}
 
-  create(dto: CreateContactUsDto, user: User) {
+  create(dto: CreateContactUsDto) {
     const contact = this.contactRepo.create({
       ...dto,
-      user: user,
     });
     return this.contactRepo.save(contact);
   }
