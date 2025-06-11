@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
-import { contactStatus, contactUsCategory } from '../entities/contact-us.entity';
+import { IsNotEmpty, IsString, IsEnum } from 'class-validator';
+import { contactUsCategory } from '../entities/contact-us.entity';
 
 export class CreateContactUsDto {
   @IsNotEmpty()
