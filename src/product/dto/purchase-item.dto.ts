@@ -1,10 +1,10 @@
-import { IsString, IsInt, Min } from "class-validator";
+import { IsString, IsInt, Min } from 'class-validator';
 
 export class PurchaseItemDto {
-    @IsString()
-    productId: string;
+  @IsString()
+  productId: string;
 
-    @IsInt()
-    @Min(1)
-    quantity: number;
+  @IsInt()
+  @Min(1)
+  quantity: number;
 }
