@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ContactUs } from './entities/contact-us.entity';
+import { ContactUs, contactStatus } from './entities/contact-us.entity';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
-import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class ContactUsService {
@@ -13,10 +12,20 @@ export class ContactUsService {
     private contactRepo: Repository<ContactUs>,
   ) {}
 
-  create(dto: CreateContactUsDto) {
-    const contact = this.contactRepo.create({
-      ...dto,
+  async getPendingStatus(): Promise<ContactUs[]> {
+    return this.contactRepo.find({
+      where: { status: contactStatus.PENDING },
     });
+  }
+
+  async getCompletedStatus(): Promise<ContactUs[]> {
+    return this.contactRepo.find({
+      where: { status: contactStatus.COMPLETED },
+    });
+  }
+
+  create(dto: CreateContactUsDto) {
+    const contact = this.contactRepo.create(dto);
     return this.contactRepo.save(contact);
   }
 
@@ -35,6 +44,9 @@ export class ContactUsService {
   async update(id: number, dto: UpdateContactUsDto) {
     const contact = await this.contactRepo.findOne({ where: { id } });
     if (!contact) throw new NotFoundException('문의를 찾을 수 없습니다.');
+    if (dto.response?.trim() !== '') {
+      contact.status = contactStatus.COMPLETED;
+    }
     Object.assign(contact, dto);
     return this.contactRepo.save(contact);
   }

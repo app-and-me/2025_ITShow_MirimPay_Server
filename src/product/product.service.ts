@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { NotFoundException } from '@nestjs/common';
+import { PurchaseRequestDto } from './dto/purchase-request.dto';
 
 @Injectable()
 export class ProductService {
@@ -28,6 +29,18 @@ export class ProductService {
       throw new NotFoundException('해당 제품을 찾을 수 없습니다.');
     }
     return product;
+  }
+
+  async processPurchase(dto: PurchaseRequestDto) {
+    const updatedProducts: Product[] = [];
+    for (const item of dto.items) {
+      const product =  await this.productRepo.findOne({ where: { id: item.productId } });
+      if (!product) throw new NotFoundException("해당 제품이 존재하지 않습니다.");
+      if (product.quantity < item.quantity) throw new BadRequestException("해당 제품의 제고가 부족합니다.");
+
+      product.quantity -= item.quantity;
+      updatedProducts.push(product);
+    }
   }
 
   async update(id: string, dto: UpdateProductDto) {

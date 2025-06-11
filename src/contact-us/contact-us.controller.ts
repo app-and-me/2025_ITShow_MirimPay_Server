@@ -6,11 +6,15 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
 } from '@nestjs/common';
 import { ContactUsService } from './contact-us.service';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
+import { ContactUs } from './entities/contact-us.entity';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('contact-us')
 export class ContactUsController {
   constructor(private readonly contactUsService: ContactUsService) {}
@@ -18,6 +22,16 @@ export class ContactUsController {
   @Post()
   create(@Body() dto: CreateContactUsDto) {
     return this.contactUsService.create(dto);
+  }
+
+  @Get('PENDING')
+  getPendingContacts(): Promise<ContactUs[]> {
+    return this.contactUsService.getPendingStatus();
+  }
+
+  @Get('COMPLETED')
+  getCompletedContacts(): Promise<ContactUs[]> {
+    return this.contactUsService.getCompletedStatus();
   }
 
   @Get()

@@ -1,4 +1,5 @@
-import { IsString, IsInt, Min } from 'class-validator';
+import { IsString, IsInt, Min, IsEnum, IsNotEmpty } from 'class-validator';
+import { productCategory } from '../entities/product.entity';
 
 export class CreateProductDto {
   @IsString()
@@ -14,4 +15,8 @@ export class CreateProductDto {
   @IsInt()
   @Min(0)
   quantity: number;
+
+  @IsNotEmpty()
+  @IsEnum(productCategory)
+  category: productCategory;
 }

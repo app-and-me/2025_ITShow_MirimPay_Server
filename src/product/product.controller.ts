@@ -6,18 +6,32 @@ import {
   Delete,
   Param,
   Body,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PurchaseRequestDto } from './dto/purchase-request.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
+@ApiTags('products')
+@ApiBearerAuth('access-token')
+@UseGuards(AuthGuard('jwt'))
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Body() dto: CreateProductDto) {
     return this.productService.create(dto);
+  }
+
+  @Post('purchase')
+  purchaseProducts(@Body() dto: PurchaseRequestDto) {
+    return this.productService.processPurchase(dto);
   }
 
   @Get()
@@ -31,11 +45,13 @@ export class ProductController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productService.update(id, dto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id') id: string) {
     return this.productService.remove(id);
   }
