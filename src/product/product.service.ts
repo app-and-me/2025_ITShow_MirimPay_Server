@@ -48,7 +48,7 @@ export class ProductService {
     await this.productRepo.save(updatedProducts);
     return {
       message: '구매가 완료되었습니다.',
-      updated: updatedProducts.map((p) => ({ id: p.id, quantity: p.quantity }))
+      updated: updatedProducts.map((p) => ({ id: p.id, quantity: p.quantity })),
     };
   }
 
