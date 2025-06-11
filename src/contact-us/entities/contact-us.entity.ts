@@ -26,9 +26,6 @@ export class ContactUs {
   @Column()
   title: string;
 
-  @Column('text')
-  detail: string;
-
   @Column({ nullable: true })
   response: string;
 
