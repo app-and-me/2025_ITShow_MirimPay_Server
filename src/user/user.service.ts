@@ -112,6 +112,7 @@ export class UserService {
         success: boolean;
         message: string;
         encoding?: string;
+        error_code?: number;
       };
 
       if (result.success && result.encoding) {
@@ -125,12 +126,28 @@ export class UserService {
           userId: userId,
         };
       } else {
-        await fs.remove(imagePath);
-        throw new Error(result.message);
+        if (result.error_code === 404) {
+          throw new NotFoundException(result.message);
+        } else if (result.error_code === 400) {
+          throw new BadRequestException(result.message);
+        } else if (result.error_code === 500) {
+          throw new InternalServerErrorException(result.message);
+        } else {
+          throw new Error(result.message);
+        }
       }
     } catch (error: unknown) {
       await fs.remove(imagePath);
-      throw new BadRequestException(
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else if (error instanceof BadRequestException) {
+        throw error;
+      } else if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
         `얼굴 등록 실패: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -180,6 +197,7 @@ export class UserService {
         message: string;
         userId?: number;
         confidence?: number;
+        error_code?: number;
       };
 
       await fs.remove(imagePath);
@@ -196,32 +214,30 @@ export class UserService {
           confidence: result.confidence,
         };
       } else {
-        throw new Error(result.message);
+        if (result.error_code === 404) {
+          throw new NotFoundException(result.message);
+        } else if (result.error_code === 400) {
+          throw new BadRequestException(result.message);
+        } else if (result.error_code === 500) {
+          throw new InternalServerErrorException(result.message);
+        } else {
+          throw new Error(result.message);
+        }
       }
     } catch (error: unknown) {
       await fs.remove(imagePath);
 
-      if (error instanceof Error) {
-        if (
-          error.message.includes('No face found') ||
-          error.message.includes('얼굴을 찾을 수 없습니다')
-        ) {
-          throw new NotFoundException(`얼굴 인식 실패: ${error.message}`);
-        } else if (
-          error.message.includes('Multiple faces') ||
-          error.message.includes('여러 얼굴')
-        ) {
-          throw new BadRequestException(`얼굴 인식 실패: ${error.message}`);
-        } else {
-          throw new InternalServerErrorException(
-            `얼굴 인식 실패: ${error.message}`,
-          );
-        }
-      } else {
-        throw new InternalServerErrorException(
-          `얼굴 인식 실패: ${String(error)}`,
-        );
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else if (error instanceof BadRequestException) {
+        throw error;
+      } else if (error instanceof InternalServerErrorException) {
+        throw error;
       }
+
+      throw new InternalServerErrorException(
+        `얼굴 인식 실패: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -293,10 +309,9 @@ export class UserService {
         },
       };
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else if (error instanceof BadRequestException) {
         throw error;
       }
 
@@ -305,8 +320,9 @@ export class UserService {
         const errorMessage =
           errorData?.message || '카드 등록 중 오류가 발생했습니다.';
         console.error('카드 등록 오류:', error.response?.data || error.message);
-        throw new Error(errorMessage);
+        throw new InternalServerErrorException(errorMessage);
       }
+
       throw new InternalServerErrorException(
         '카드 등록 중 오류가 발생했습니다.',
       );
@@ -493,7 +509,7 @@ export class UserService {
         const errorMessage =
           errorData?.message || '결제 처리 중 오류가 발생했습니다.';
         console.error('결제 처리 오류:', error.response?.data || error.message);
-        throw new BadRequestException(`결제 실패: ${errorMessage}`);
+        throw new InternalServerErrorException(`결제 실패: ${errorMessage}`);
       }
       throw new InternalServerErrorException(
         '결제 처리 중 시스템 오류가 발생했습니다.',
@@ -610,9 +626,11 @@ export class UserService {
           '얼굴 인식 결제 오류:',
           error.response?.data || error.message,
         );
-        throw new Error(`결제 실패: ${errorMessage}`);
+        throw new InternalServerErrorException(`결제 실패: ${errorMessage}`);
       }
-      throw new Error('결제 처리 중 시스템 오류가 발생했습니다.');
+      throw new InternalServerErrorException(
+        '결제 처리 중 시스템 오류가 발생했습니다.',
+      );
     }
   }
 
@@ -722,9 +740,11 @@ export class UserService {
           '얼굴 인식 결제 오류:',
           error.response?.data || error.message,
         );
-        throw new Error(`결제 실패: ${errorMessage}`);
+        throw new InternalServerErrorException(`결제 실패: ${errorMessage}`);
       }
-      throw new Error('결제 처리 중 시스템 오류가 발생했습니다.');
+      throw new InternalServerErrorException(
+        '결제 처리 중 시스템 오류가 발생했습니다.',
+      );
     }
   }
 
@@ -778,9 +798,8 @@ export class UserService {
         success: boolean;
         message: string;
         encoding?: string;
+        error_code?: number;
       };
-
-      console.log(result);
 
       if (result.success && result.encoding) {
         user.faceImagePath = imagePath;
@@ -793,12 +812,28 @@ export class UserService {
           userId: userId,
         };
       } else {
-        await fs.remove(imagePath);
-        throw new Error(result.message);
+        if (result.error_code === 404) {
+          throw new NotFoundException(result.message);
+        } else if (result.error_code === 400) {
+          throw new BadRequestException(result.message);
+        } else if (result.error_code === 500) {
+          throw new InternalServerErrorException(result.message);
+        } else {
+          throw new Error(result.message);
+        }
       }
     } catch (error: unknown) {
       await fs.remove(imagePath);
-      throw new BadRequestException(
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else if (error instanceof BadRequestException) {
+        throw error;
+      } else if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
         `얼굴 등록 실패: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
@@ -843,6 +878,7 @@ export class UserService {
         message: string;
         userId?: number;
         confidence?: number;
+        error_code?: number;
       };
 
       await fs.remove(imagePath);
@@ -859,28 +895,30 @@ export class UserService {
           confidence: result.confidence,
         };
       } else {
-        throw new Error(result.message);
+        if (result.error_code === 404) {
+          throw new NotFoundException(result.message);
+        } else if (result.error_code === 400) {
+          throw new BadRequestException(result.message);
+        } else if (result.error_code === 500) {
+          throw new InternalServerErrorException(result.message);
+        } else {
+          throw new Error(result.message);
+        }
       }
     } catch (error: unknown) {
       await fs.remove(imagePath);
 
-      if (error instanceof Error) {
-        if (
-          error.message.includes('No face found') ||
-          error.message.includes('얼굴을 찾을 수 없습니다')
-        ) {
-          throw new NotFoundException(`얼굴 인식 실패: ${error.message}`);
-        } else if (
-          error.message.includes('Multiple faces') ||
-          error.message.includes('여러 얼굴')
-        ) {
-          throw new BadRequestException(`얼굴 인식 실패: ${error.message}`);
-        } else {
-          throw new Error(`얼굴 인식 실패: ${error.message}`);
-        }
-      } else {
-        throw new Error(`얼굴 인식 실패: ${String(error)}`);
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else if (error instanceof BadRequestException) {
+        throw error;
+      } else if (error instanceof InternalServerErrorException) {
+        throw error;
       }
+
+      throw new InternalServerErrorException(
+        `얼굴 인식 실패: ${String(error)}`,
+      );
     }
   }
 }

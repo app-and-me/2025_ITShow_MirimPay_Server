@@ -32,7 +32,6 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RecognizeFaceBase64Dto } from './dto/recognize-face-base64.dto';
 import { RegisterFaceBase64Dto } from './dto/register-face.dto';
 import { User } from './entities/user.entity';
-import * as fs from 'fs';
 
 export interface ExtendedUser extends User {
   scopes?: string[];
