@@ -1,9 +1,6 @@
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class RegisterCardDto {
-  @IsNumber()
-  userId: number;
-
   @IsString()
   cardNumber: string;
 
@@ -15,6 +12,9 @@ export class RegisterCardDto {
 
   @IsString()
   cardPassword: string;
+
+  @IsString()
+  cvc: string;
 
   @IsString()
   identityNumber: string;

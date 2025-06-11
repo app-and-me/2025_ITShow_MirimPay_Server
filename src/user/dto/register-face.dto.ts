@@ -1,6 +1,6 @@
-import { IsNumber } from 'class-validator';
+import { IsString } from 'class-validator';
 
-export class RegisterFaceDto {
-  @IsNumber()
-  userId: number;
+export class RegisterFaceBase64Dto {
+  @IsString()
+  faceImage: string;
 }
