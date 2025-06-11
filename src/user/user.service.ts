@@ -24,6 +24,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs-extra';
+import bcrypt from 'bcrypt';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -442,12 +443,23 @@ export class UserService {
     };
   }
 
-  async processPayment(dto: ProcessPaymentDto) {
+  async processPayment(dto: ProcessPaymentDto, userId?: number) {
     try {
-      const card = await this.cardRepo.findOne({
-        where: { customerKey: dto.customerKey },
-        relations: ['user'],
+      const user = await this.userRepo.findOne({
+        where: { id: userId },
+        relations: ['cards'],
       });
+
+      if (!user) {
+        throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      }
+
+      const isMatch = await bcrypt.compare(dto.pin, user.pin);
+      if (!isMatch) {
+        throw new BadRequestException('PIN이 일치하지 않습니다.');
+      }
+
+      const card = user.cards.find((c) => c.customerKey === dto.customerKey);
 
       if (!card) {
         throw new NotFoundException(
@@ -530,6 +542,11 @@ export class UserService {
     }
 
     const user = recognitionResult.user;
+
+    const isMatch = await bcrypt.compare(dto.pin, user.pin);
+    if (!isMatch) {
+      throw new BadRequestException('PIN이 일치하지 않습니다.');
+    }
 
     const mainCard = await this.cardRepo.findOne({
       where: { userId: user.id, isMainCard: true },
@@ -644,6 +661,11 @@ export class UserService {
     }
 
     const user = recognitionResult.user;
+
+    const isMatch = await bcrypt.compare(dto.pin, user.pin);
+    if (!isMatch) {
+      throw new BadRequestException('PIN이 일치하지 않습니다.');
+    }
 
     const mainCard = await this.cardRepo.findOne({
       where: { userId: user.id, isMainCard: true },
