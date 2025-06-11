@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ContactUs } from './entities/contact-us.entity';
+import { ContactUs, contactStatus } from './entities/contact-us.entity';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
-import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class ContactUsService {
@@ -13,11 +12,20 @@ export class ContactUsService {
     private contactRepo: Repository<ContactUs>,
   ) {}
 
-  create(dto: CreateContactUsDto, user: User) {
-    const contact = this.contactRepo.create({
-      ...dto,
-      user: user,
+  async getPendingStatus(): Promise<ContactUs[]> {
+    return this.contactRepo.find({
+      where: { status: contactStatus.PENDING },
     });
+  }
+
+  async getCompletedStatus(): Promise<ContactUs[]> {
+    return this.contactRepo.find({
+      where: { status: contactStatus.COMPLETED },
+    });
+  }
+
+  create(dto: CreateContactUsDto) {
+    const contact = this.contactRepo.create(dto);
     return this.contactRepo.save(contact);
   }
 

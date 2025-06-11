@@ -10,6 +10,7 @@ import {
 import { ContactUsService } from './contact-us.service';
 import { CreateContactUsDto } from './dto/create-contact-us.dto';
 import { UpdateContactUsDto } from './dto/update-contact-us.dto';
+import { ContactUs } from './entities/contact-us.entity';
 
 @Controller('contact-us')
 export class ContactUsController {
@@ -18,6 +19,16 @@ export class ContactUsController {
   @Post()
   create(@Body() dto: CreateContactUsDto) {
     return this.contactUsService.create(dto);
+  }
+
+  @Get('PENDING')
+  getPendingContacts(): Promise<ContactUs[]> {
+    return this.contactUsService.getPendingStatus();
+  }
+
+  @Get('COMPLETED')
+  getCompletedContacts(): Promise<ContactUs[]> {
+    return this.contactUsService.getCompletedStatus();
   }
 
   @Get()
