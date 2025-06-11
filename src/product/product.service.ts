@@ -39,11 +39,17 @@ export class ProductService {
       if (!product)
         throw new NotFoundException('해당 제품이 존재하지 않습니다.');
       if (product.quantity < item.quantity)
-        throw new BadRequestException('해당 제품의 제고가 부족합니다.');
+        throw new BadRequestException('제품의 재고가 부족합니다.');
 
       product.quantity -= item.quantity;
       updatedProducts.push(product);
     }
+
+    await this.productRepo.save(updatedProducts);
+    return {
+      message: '구매가 완료되었습니다.',
+      updated: updatedProducts.map((p) => ({ id: p.id, quantity: p.quantity }))
+    };
   }
 
   async remove(id: string) {
