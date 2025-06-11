@@ -228,7 +228,6 @@ export class UserController {
   }
 
   @Get('exist/:id')
-  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.userService.findOne(+id);
   }
