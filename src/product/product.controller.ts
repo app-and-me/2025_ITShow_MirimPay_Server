@@ -13,7 +13,12 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PurchaseRequestDto } from './dto/purchase-request.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
+@ApiTags('products')
+@ApiBearerAuth('access-token')
+@UseGuards(AuthGuard('jwt'))
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
