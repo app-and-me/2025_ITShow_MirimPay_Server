@@ -6,21 +6,6 @@ export class CreateContactUsDto {
   @IsString()
   title: string;
 
-  @IsNotEmpty()
-  @IsString()
-  detail: string;
-
-  @IsOptional()
-  @IsString()
-  response?: string;
-
-  @IsOptional()
-  @IsEnum(contactStatus)
-  status?: contactStatus;
-
-  @IsNotEmpty()
-  userId: number;
-
   @IsEnum(contactUsCategory)
   @IsNotEmpty()
   category: contactUsCategory;

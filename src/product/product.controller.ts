@@ -12,6 +12,7 @@ import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PurchaseRequestDto } from './dto/purchase-request.dto';
 
 @Controller('products')
 export class ProductController {
@@ -21,6 +22,11 @@ export class ProductController {
   @UseGuards(JwtAuthGuard)
   create(@Body() dto: CreateProductDto) {
     return this.productService.create(dto);
+  }
+
+  @Post('purchase')
+  purchaseProducts(@Body() dto: PurchaseRequestDto) {
+    return this.productService.processPurchase(dto);
   }
 
   @Get()
