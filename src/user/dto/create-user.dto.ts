@@ -8,4 +8,8 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   nickname: string;
+
+  @IsNotEmpty()
+  @IsString()
+  pin: string;
 }

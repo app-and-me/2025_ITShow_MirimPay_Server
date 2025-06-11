@@ -15,6 +15,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   faceEncoding: string;
 
+  @Column()
+  pin: string;
+
   @OneToMany(() => Card, (card) => card.user)
   cards: Card[];
 }
