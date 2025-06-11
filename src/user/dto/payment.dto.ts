@@ -2,12 +2,6 @@ import { IsNumber, IsString } from 'class-validator';
 
 export class CreateQrPaymentDto {
   @IsNumber()
-  userId: number;
-
-  @IsNumber()
-  cardId: number;
-
-  @IsNumber()
   amount: number;
 
   @IsString()
@@ -32,6 +26,17 @@ export class ProcessPaymentDto {
 }
 
 export class FacePaymentDto {
+  @IsNumber()
+  amount: number;
+
+  @IsString()
+  orderName: string;
+}
+
+export class FacePaymentBase64Dto {
+  @IsString()
+  faceImage: string;
+
   @IsNumber()
   amount: number;
 
