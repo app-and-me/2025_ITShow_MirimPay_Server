@@ -943,4 +943,18 @@ export class UserService {
       );
     }
   }
+
+  async verifyPin(userId: number, pin: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    const isMatch = await bcrypt.compare(pin, user.pin);
+    if (!isMatch) {
+      throw new BadRequestException('PIN이 일치하지 않습니다.');
+    }
+
+    return { success: true, message: 'PIN이 확인되었습니다.' };
+  }
 }
