@@ -233,6 +233,7 @@ export class UserController {
   }
 
   @Get('verify/pin/:pin')
+  @UseGuards(JwtAuthGuard)
   async verifyPin(@Param('pin') pin: string, @Req() req: RequestWithUser) {
     const userId = req.user?.id;
     if (!userId) {
