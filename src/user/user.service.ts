@@ -24,7 +24,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs-extra';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import {
