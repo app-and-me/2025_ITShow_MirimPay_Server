@@ -4,6 +4,7 @@ RUN apt-get update && \
     apt-get install -y \
         python3 \
         python3-pip \
+        python3-venv \
         python-is-python3 \
         cmake \
         build-essential \
@@ -18,9 +19,13 @@ RUN apt-get update && \
 
 WORKDIR /usr/src/app
 
+# Python 가상환경 생성 및 패키지 설치
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY requirements.txt .
-RUN pip3 install --upgrade pip setuptools wheel --break-system-packages && \
-    pip3 install dlib face_recognition==1.3.0 opencv-python-headless==4.8.1.78 numpy==1.24.3 Pillow==10.0.1 --break-system-packages
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install dlib face_recognition==1.3.0 opencv-python-headless==4.8.1.78 numpy==1.24.3 Pillow==10.0.1
 
 COPY package.json yarn.lock* ./
 RUN yarn install --production --frozen-lockfile && \
@@ -32,7 +37,7 @@ FROM node:lts-slim as production
 RUN apt-get update && \
     apt-get install -y \
         python3 \
-        python3-pip \
+        python3-venv \
         libx11-6 \
         libatlas3-base \
         libgtk-3-0 \
@@ -43,15 +48,18 @@ RUN apt-get update && \
 
 WORKDIR /usr/src/app
 
-COPY --from=builder /usr/local/lib/python3.*/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /opt/venv /opt/venv
+
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/local/share/.config/yarn /usr/local/share/.config/yarn
 
 COPY . .
 
+ENV PATH="/opt/venv/bin:$PATH"
+ENV NODE_ENV=production
+
 EXPOSE 8080
 
-ENV NODE_ENV=production
 RUN chown -R node /usr/src/app
 USER node
 
