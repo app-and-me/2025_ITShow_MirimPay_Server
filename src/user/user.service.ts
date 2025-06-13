@@ -957,4 +957,22 @@ export class UserService {
 
     return { success: true, message: 'PIN이 확인되었습니다.' };
   }
+
+  async updatePin(userId: number, currentPin: string, newPin: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    const isMatch = await bcrypt.compare(currentPin, user.pin);
+    if (!isMatch) {
+      throw new BadRequestException('현재 PIN이 일치하지 않습니다.');
+    }
+
+    const hashedNewPin = await bcrypt.hash(newPin, 10);
+    user.pin = hashedNewPin;
+    await this.userRepo.save(user);
+
+    return { success: true, message: 'PIN이 성공적으로 변경되었습니다.' };
+  }
 }
