@@ -10,6 +10,7 @@ import {
   Req,
   UnauthorizedException,
   Delete,
+  Put,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -240,5 +241,19 @@ export class UserController {
       throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
     }
     return this.userService.verifyPin(userId, pin);
+  }
+
+  @Put('pin')
+  @UseGuards(JwtAuthGuard)
+  updatePin(
+    @Req() req: RequestWithUser,
+    @Body('currentPin') currentPin: string,
+    @Body('newPin') newPin: string,
+  ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
+    }
+    return this.userService.updatePin(userId, currentPin, newPin);
   }
 }
