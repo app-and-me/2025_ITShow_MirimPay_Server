@@ -231,14 +231,9 @@ export class UserController {
     return this.userService.findOne(+id);
   }
 
-  @Get('verify/pin/:pin')
-  @UseGuards(JwtAuthGuard)
-  async verifyPin(@Param('pin') pin: string, @Req() req: RequestWithUser) {
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new UnauthorizedException('사용자를 찾을 수 없습니다.');
-    }
-    return this.userService.verifyPin(userId, pin);
+  @Get(':userId/verify/pin/:pin')
+  async verifyPin(@Param('pin') pin: string, @Param('userId') userId: string) {
+    return this.userService.verifyPin(+userId, pin);
   }
 
   @Put('pin')
