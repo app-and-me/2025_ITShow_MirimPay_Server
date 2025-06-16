@@ -15,12 +15,12 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('products')
 @ApiBearerAuth('access-token')
-@UseGuards(JwtAuthGuard)
 @Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(@Body() dto: CreateProductDto) {
     return this.productService.create(dto);
   }
@@ -31,11 +31,13 @@ export class ProductController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.productService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.productService.findOne(id);
   }
