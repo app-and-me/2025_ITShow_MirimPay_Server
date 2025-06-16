@@ -1,8 +1,10 @@
 import { IsString, IsInt, Min, IsEnum, IsNotEmpty } from 'class-validator';
 import { productCategory } from '../entities/product.entity';
+import { PrimaryColumn } from 'typeorm';
 
 export class CreateProductDto {
   @IsString()
+  @PrimaryColumn()
   id: string;
 
   @IsString()
