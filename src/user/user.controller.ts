@@ -198,7 +198,6 @@ export class UserController {
   }
 
   @Post('payment/face')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '얼굴 인식 결제' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('face'))
@@ -210,7 +209,6 @@ export class UserController {
   }
 
   @Post('payment/face/base64')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '얼굴 인식 결제 (Base64)' })
   async faceRecognitionPaymentBase64(@Body() dto: FacePaymentBase64Dto) {
     return this.userService.faceRecognitionPaymentBase64(dto.faceImage, dto);
