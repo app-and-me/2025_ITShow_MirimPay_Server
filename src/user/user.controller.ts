@@ -103,7 +103,7 @@ export class UserController {
     return this.userService.registerFaceBase64(userId, dto.faceImage);
   }
 
-  @Get('face/recognize')
+  @Post('face/recognize')
   @ApiOperation({ summary: '얼굴 인식으로 사용자 찾기' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('face'))
@@ -111,7 +111,7 @@ export class UserController {
     return this.userService.recognizeFace(file);
   }
 
-  @Get('face/recognize/base64')
+  @Post('face/recognize/base64')
   @ApiOperation({ summary: '얼굴 인식으로 사용자 찾기 (Base64)' })
   async recognizeFaceBase64(@Body() dto: RecognizeFaceBase64Dto) {
     return this.userService.recognizeFaceBase64(dto.faceImage);
