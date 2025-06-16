@@ -46,21 +46,20 @@ RUN apt-get update && \
         liblapack3 && \
     rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /usr/src/app && chown node:node /usr/src/app
+
+USER node
 WORKDIR /usr/src/app
 
-COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder --chown=node:node /opt/venv /opt/venv
+COPY --from=builder --chown=node:node /usr/src/app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /usr/local/share/.config/yarn /usr/local/share/.config/yarn
 
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/local/share/.config/yarn /usr/local/share/.config/yarn
-
-COPY . .
+COPY --chown=node:node . .
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV NODE_ENV=production
 
 EXPOSE 8080
-
-RUN chown -R node /usr/src/app
-USER node
 
 CMD ["yarn", "start"]
